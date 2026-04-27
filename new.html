@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Dodger - CSE Project</title>
+    <style>
+        body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background: #222; color: white; font-family: Arial, sans-serif; overflow: hidden; }
+        canvas { border: 4px solid #444; background: #000; box-shadow: 0 0 20px rgba(0,255,0,0.2); }
+        #ui { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); text-align: center; pointer-events: none; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2 id="scoreText">Score: 0</h2>
+        <p id="hint">Press SPACE or Tap to Jump</p>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreText = document.getElementById('scoreText');
+
+        canvas.width = 800;
+        canvas.height = 400;
+
+        let score = 0;
+        let gameActive = true;
+        let gameSpeed = 5;
+
+        const player = { x: 50, y: 300, w: 40, h: 40, dy: 0, jumpForce: 12, gravity: 0.6, grounded: false, color: '#00ff00' };
+        const obstacles = [];
+
+        function spawnObstacle() {
+            const size = Math.random() * 30 + 20;
+            obstacles.push({ x: canvas.width, y: canvas.height - size, w: size, h: size });
+        }
+
+        function update() {
+            if (!gameActive) return;
+            player.dy += player.gravity;
+            player.y += player.dy;
+
+            if (player.y + player.h > canvas.height) {
+                player.y = canvas.height - player.h;
+                player.dy = 0;
+                player.grounded = true;
+            }
+
+            if (Math.random() < 0.02) spawnObstacle();
+            
+            obstacles.forEach((obs, index) => {
+                obs.x -= gameSpeed;
+                if (player.x < obs.x + obs.w && player.x + player.w > obs.x &&
+                    player.y < obs.y + obs.h && player.y + player.h > obs.y) {
+                    gameActive = false;
+                    alert("Game Over! Score: " + Math.floor(score));
+                    location.reload();
+                }
+                if (obs.x + obs.w < 0) obstacles.splice(index, 1);
+            });
+
+            score += 0.1;
+            gameSpeed += 0.001;
+            scoreText.innerText = `Score: ${Math.floor(score)}`;
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.w, player.h);
+            ctx.fillStyle = '#ff4444';
+            obstacles.forEach(obs => ctx.fillRect(obs.x, obs.y, obs.w, obs.h));
+        }
+
+        function loop() {
+            update();
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && player.grounded) {
+                player.dy = -player.jumpForce;
+                player.grounded = false;
+            }
+        });
+
+        loop();
+    </script>
+</body>
+</html>
